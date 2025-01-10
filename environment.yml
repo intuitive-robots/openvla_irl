@@ -1,0 +1,33 @@
+name: openvla
+
+channels:
+
+  - pytorch
+  - nvidia
+  - conda-forge
+  - defaults
+
+dependencies:
+
+  - python = 3.10
+  - pip
+
+  # OpenVLA
+
+  - pytorch == 2.2.0
+  - torchvision == 0.17.0
+  - torchaudio == 2.2.0
+  - pytorch-cuda == 12.1
+  - transformers == 4.40.1
+  - tokenizers == 0.19.1
+  - timm == 0.9.10
+
+  # Additional for evaluation
+
+  - pip:
+    - tensorflow == 2.15.0
+    - bitsandbytes
+    - gymnasium  # Use this insead of deprecated gym
+    - pyzmq  # Required for env server
+    - imageio
+
