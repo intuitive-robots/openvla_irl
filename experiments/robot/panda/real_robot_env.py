@@ -173,7 +173,7 @@ class RREnvClient(gym.Env):
         action[-1] = -1.0 if self.is_gripper_closed else 1.0
 
         # Send request
-        self._send_step_request(action)  # TODO blocking?
+        self._send_step_request(action)  # TODO Add parameter for blocking
         
         # Receive response
         results = self._receive_results()

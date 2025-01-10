@@ -43,6 +43,8 @@ class GenerateConfig:
     model_cache_dir: Optional[str] = None                           # Path where pretrained Huggingface models are saved
     load_in_8bit: bool = False                                      # (For OpenVLA only) Load with 8-bit quantization
     load_in_4bit: bool = True                                       # (For OpenVLA only) Load with 4-bit quantization
+    unnorm_key: str = "bridge_orig"                                 # Key of the dataset in dataset_statistics.json
+    # TODO Change unnormalization, use this as reference https://huggingface.co/openvla/openvla-7b-finetuned-libero-10/blob/main/dataset_statistics.json
 
     center_crop: bool = False                                       # Center crop? (if trained w/ random crop image aug)
 
@@ -65,12 +67,10 @@ class GenerateConfig:
 
 
 @draccus.wrap()
-def eval_model_in_bridge_env(cfg: GenerateConfig) -> None:
+def eval_model_in_real_robot_env(cfg: GenerateConfig) -> None:
     assert cfg.pretrained_checkpoint is not None, "cfg.pretrained_checkpoint must not be None!"
     assert not cfg.center_crop, "`center_crop` should be disabled for Bridge evaluations!"
-
-    # [OpenVLA] Set action un-normalization key
-    cfg.unnorm_key = "bridge_orig"
+    assert cfg.unnorm_key != "" and cfg.unnorm_key is not None, "cfg.unnorm_key must not be empty!"
 
     # Load model
     model = get_model(cfg)
@@ -169,4 +169,4 @@ def eval_model_in_bridge_env(cfg: GenerateConfig) -> None:
 
 
 if __name__ == "__main__":
-    eval_model_in_bridge_env()
+    eval_model_in_real_robot_env()
