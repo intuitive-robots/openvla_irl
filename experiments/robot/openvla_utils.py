@@ -46,8 +46,10 @@ def get_vla(cfg):
         torch_dtype=torch.bfloat16,
         load_in_8bit=cfg.load_in_8bit,
         load_in_4bit=cfg.load_in_4bit,
+        device_map="auto",
         low_cpu_mem_usage=True,
         trust_remote_code=True,
+        cache_dir=cfg.model_cache_dir
     )
 
     # Move model to device.
