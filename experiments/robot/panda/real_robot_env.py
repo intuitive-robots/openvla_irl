@@ -5,32 +5,6 @@ import numpy as np
 import zmq
 
 
-def convert_obs(obs):
-
-    # Assume that the image has the correct shape, otherwise this should be fixed in the server's gym environment
-    image_obs = obs["primary_camera"]
-    
-    # Concatenate joint positions and gripper width
-    proprio = np.concatenate([obs["joint_pos"], obs["gripper_width"]], axis=-1)
-    
-    return {
-        "image_primary": image_obs,  # OpenVLA does not seem to use this
-        "full_image": image_obs,  # Original code uses obs["full_image"], which should correspond to the camera output
-        "proprio": proprio,
-    }
-
-def convert_action(action):
-    
-    # Decompose action
-    ee_delta_xyz = action[:3]
-    ee_euler_rotation = action[3:6]
-    grasp_action = action[[6,]]
-
-    # Convert Euler angles to a quaternion
-    ee_quat_rotation = euler_to_quaternion(ee_euler_rotation)
-
-    return np.concatenate((ee_delta_xyz, ee_quat_rotation, grasp_action), axis=0)
-
 def euler_to_quaternion(euler_angles):
     """
     Euler angles in radian follow the convention: [alpha, beta, gamma] -> R_z(gamma) @ R_y(beta) @ R_x(alpha)
@@ -159,7 +133,7 @@ class RREnvClient(gym.Env):
             raise Exception(f"Not connected to {self.name}")
         
         # Convert action
-        action = convert_action(action)
+        action = self._convert_action(action)
 
         # Sticky gripper logic
         if (action[-1] < 0.5) != self.is_gripper_closed:
@@ -179,7 +153,7 @@ class RREnvClient(gym.Env):
         results = self._receive_results()
 
         # Convert observation
-        obs = convert_obs(results["observation"])
+        obs = self._convert_obs(results["observation"])
 
         return obs, results["reward"], results["terminated"], results["truncated"], results["info"]
 
@@ -195,7 +169,7 @@ class RREnvClient(gym.Env):
         results = self._receive_results()
 
         # Convert observation
-        obs = convert_obs(results["observation"])
+        obs = self._convert_obs(results["observation"])
 
         # Reset sticky gripper
         self.is_gripper_closed = False
@@ -215,9 +189,35 @@ class RREnvClient(gym.Env):
         results = self._receive_results()
 
         # Convert observations
-        obs = convert_obs(results["observation"])
+        obs = self._convert_obs(results["observation"])
 
         return obs
+
+    def _convert_obs(self, obs):
+
+        # Assume that the image has the correct shape, otherwise this should be fixed in the server's gym environment
+        image_obs = obs["primary_camera"]
+        
+        # Concatenate joint positions and gripper width
+        proprio = np.concatenate([obs["joint_pos"], obs["gripper_width"]], axis=-1)
+        
+        return {
+            "image_primary": image_obs,  # OpenVLA does not seem to use this
+            "full_image": image_obs,  # Original code uses obs["full_image"], which should correspond to the camera output
+            "proprio": proprio,
+        }
+
+    def _convert_action(self, action):
+        
+        # Decompose action
+        ee_delta_xyz = action[:3]
+        ee_euler_rotation = action[3:6]
+        grasp_action = action[[6,]]
+
+        # Convert Euler angles to a quaternion
+        ee_quat_rotation = euler_to_quaternion(ee_euler_rotation)
+
+        return np.concatenate((ee_delta_xyz, ee_quat_rotation, grasp_action), axis=0)
 
     def _send_step_request(self, action: np.ndarray):
 
